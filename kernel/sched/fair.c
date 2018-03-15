@@ -7243,7 +7243,7 @@ retry:
 
 			/* Favor CPUs with maximum spare capacity */
 			if (capacity_orig == target_capacity &&
-			    spare_cap < target_max_spare_cap)
+			    (capacity_orig - new_util) < target_max_spare_cap)
 				continue;
 
 			target_max_spare_cap = spare_cap;
