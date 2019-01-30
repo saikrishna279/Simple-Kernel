@@ -7933,6 +7933,10 @@ static int ufs_read_device_desc_data(struct ufs_hba *hba)
 	hba->dev_info.b_device_sub_class =
 		desc_buf[DEVICE_DESC_PARAM_DEVICE_SUB_CLASS];
 	hba->dev_info.i_product_name = desc_buf[DEVICE_DESC_PARAM_PRDCT_NAME];
+
+	update_hardware_info(TYPE_EMMC, hba->dev_info.w_manufacturer_id);
+	dev_info(hba->dev, "UFS manufacturer id: 0x%04X\n", hba->dev_info.w_manufacturer_id);
+
 out:
 	kfree(desc_buf);
 	return err;
