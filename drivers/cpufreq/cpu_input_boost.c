@@ -19,8 +19,7 @@ static __read_mostly unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_
 static __read_mostly unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
 static __read_mostly unsigned int remove_input_boost_freq_lp = CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
 static __read_mostly unsigned int remove_input_boost_freq_perf = CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
-static __read_mostly unsigned int input_boost_awake_return_freq_lp = CONFIG_AWAKE_REMOVE_INPUT_BOOST_FREQ_LP;
-static __read_mostly unsigned int input_boost_awake_return_freq_hp = CONFIG_AWAKE_REMOVE_INPUT_BOOST_FREQ_PERF;
+
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
 static bool stune_boost_active;
@@ -31,8 +30,6 @@ module_param(dynamic_stune_boost, short, 0644);
 
 module_param(input_boost_freq_lp, uint, 0644);
 module_param(input_boost_freq_hp, uint, 0644);
-module_param(input_boost_awake_return_freq_lp, uint, 0644);
-module_param(input_boost_awake_return_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
 module_param(remove_input_boost_freq_lp, uint, 0644);
 module_param(remove_input_boost_freq_perf, uint, 0644);
@@ -66,15 +63,8 @@ static u32 get_boost_freq(struct boost_drv *b, u32 cpu)
 	return input_boost_freq_hp;
 }
 
-static u32 get_min_freq(struct boost_drv *b, u32 cpu, u32 state)
+static u32 get_min_freq(struct boost_drv *b, u32 cpu)
 {
-	if (state & SCREEN_AWAKE) {
-		if (cpumask_test_cpu(cpu, cpu_lp_mask))
-			return input_boost_awake_return_freq_lp;
-
-		return input_boost_awake_return_freq_hp;
-	}
-
 	if (cpumask_test_cpu(cpu, cpu_lp_mask))
 		return remove_input_boost_freq_lp;
 
@@ -265,7 +255,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 		boost_freq = get_boost_freq(b, policy->cpu);
 		policy->min = min(policy->max, boost_freq);
 	} else {
-		min_freq = get_min_freq(b, policy->cpu, state);
+		min_freq = get_min_freq(b, policy->cpu);
 		policy->min = max(policy->cpuinfo.min_freq, min_freq);
 	}
 
