@@ -7,9 +7,9 @@
 
 #include <linux/cpu.h>
 #include <linux/cpufreq.h>
-#include <linux/msm_drm_notify.h>
 #include <linux/input.h>
 #include <linux/moduleparam.h>
+#include <linux/msm_drm_notify.h>
 #include <linux/slab.h>
 
 unsigned long last_input_jiffies;
@@ -168,7 +168,8 @@ static void input_boost_worker(struct work_struct *work)
 #endif
 
 	queue_delayed_work(b->wq, &b->input_unboost,
-		msecs_to_jiffies(input_boost_duration));
+			   msecs_to_jiffies(input_boost_duration));
+			   
 }
 
 static void input_unboost_worker(struct work_struct *work)
@@ -210,7 +211,8 @@ static void max_boost_worker(struct work_struct *work)
 #endif
 
 	queue_delayed_work(b->wq, &b->max_unboost,
-		msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
+			   msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
+
 }
 
 static void max_unboost_worker(struct work_struct *work)
