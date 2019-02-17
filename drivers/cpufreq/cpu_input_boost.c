@@ -19,6 +19,7 @@ static __read_mostly unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_
 static __read_mostly unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
 static __read_mostly unsigned int remove_input_boost_freq_lp = CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
 static __read_mostly unsigned int remove_input_boost_freq_perf = CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
+static __read_mostly unsigned int frame_boost_timeout = CONFIG_FRAME_BOOST_TIMEOUT;
 
 
 #ifdef CONFIG_DYNAMIC_STUNE_BOOST
@@ -33,6 +34,7 @@ module_param(input_boost_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
 module_param(remove_input_boost_freq_lp, uint, 0644);
 module_param(remove_input_boost_freq_perf, uint, 0644);
+module_param(frame_boost_timeout, uint, 0644);
 
 /* Available bits for boost_drv state */
 #define SCREEN_AWAKE		BIT(0)
@@ -105,6 +107,12 @@ static void unboost_all_cpus(struct boost_drv *b)
 
 	clear_boost_bit(b, INPUT_BOOST | WAKE_BOOST | MAX_BOOST);
 	update_online_cpu_policy();
+}
+
+bool cpu_input_boost_should_boost_frame(void)
+{
+	return time_before(jiffies, last_input_jiffies +
+			   msecs_to_jiffies(frame_boost_timeout));
 }
 
 void cpu_input_boost_kick(void)
