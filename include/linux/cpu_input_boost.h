@@ -12,19 +12,12 @@ extern unsigned long last_input_jiffies;
 
 void cpu_input_boost_kick(void);
 void cpu_input_boost_kick_max(unsigned int duration_ms);
-
-bool cpu_input_boost_should_boost_frame(void);
 #else
 static inline void cpu_input_boost_kick(void)
 {
 }
 static inline void cpu_input_boost_kick_max(unsigned int duration_ms)
 {
-}
-
-static inline bool cpu_input_boost_should_boost_frame(void)
-{
-	return false;
 }
 #endif
 
