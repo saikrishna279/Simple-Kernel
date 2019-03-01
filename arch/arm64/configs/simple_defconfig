@@ -1,5 +1,5 @@
 #Config local version
-CONFIG_LOCALVERSION="-Simple-2.4"
+CONFIG_LOCALVERSION="-Simple-2.5"
 CONFIG_DEFAULT_HOSTNAME="(none)"
 # CONFIG_FHANDLE is not set
 CONFIG_AUDIT=y

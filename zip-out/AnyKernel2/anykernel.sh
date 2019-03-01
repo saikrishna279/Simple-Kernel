@@ -4,7 +4,7 @@
 ## AnyKernel setup
 # begin properties
 properties() {'
-kernel.string=Simple Kernel v2.4 by oipr @xda-developers
+kernel.string=Simple Kernel v2.5 by oipr @xda-developers
 do.devicecheck=1
 do.modules=0
 do.cleanup=1
@@ -42,13 +42,14 @@ set_con() {
   exec_util "chcon u:object_r:"$1":s0 $2"
 }
 
-
+ui_print "                                          "
 ui_print "  _________.__               .__          "
 ui_print " /   _____/|__| _____ ______ |  |   ____  "
 ui_print " \_____  \ |  |/     \\____ \|  | _/ __ \ "
 ui_print " /        \|  |  Y Y  \  |_> >  |_\  ___/ "
 ui_print "/_______  /|__|__|_|  /   __/|____/\___  >"
 ui_print "        \/          \/|__|             \/ "
+ui_print "                                          "
 ui_print "$compatibility_string";
 
 ## Trim partitions
