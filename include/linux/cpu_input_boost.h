@@ -5,11 +5,7 @@
 #ifndef _CPU_INPUT_BOOST_H_
 #define _CPU_INPUT_BOOST_H_
 
-#include <linux/types.h>
-
 #ifdef CONFIG_CPU_INPUT_BOOST
-extern unsigned long last_input_jiffies;
-
 void cpu_input_boost_kick(void);
 void cpu_input_boost_kick_max(unsigned int duration_ms);
 #else
