@@ -7,9 +7,9 @@
 
 #include <linux/cpu.h>
 #include <linux/cpufreq.h>
-#include <linux/msm_drm_notify.h>
 #include <linux/input.h>
 #include <linux/moduleparam.h>
+#include <linux/msm_drm_notify.h>
 #include <linux/slab.h>
 
 static unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_LP;
@@ -23,6 +23,14 @@ module_param(input_boost_freq_hp, uint, 0644);
 module_param(input_boost_return_freq_lp, uint, 0644);
 module_param(input_boost_return_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static __read_mostly int input_stune_boost = CONFIG_INPUT_STUNE_BOOST;
+static __read_mostly int max_stune_boost = CONFIG_MAX_STUNE_BOOST;
+
+module_param_named(dynamic_stune_boost, input_stune_boost, int, 0644);
+module_param(max_stune_boost, int, 0644);
+#endif
 
 /* Available bits for boost_drv state */
 #define SCREEN_AWAKE		BIT(0)
@@ -41,6 +49,11 @@ struct boost_drv {
 	atomic64_t max_boost_expires;
 	atomic_t max_boost_dur;
 	atomic_t state;
+
+	bool input_stune_active;
+	int input_stune_slot;
+	bool max_stune_active;
+	int max_stune_slot;
 };
 
 static struct boost_drv *boost_drv_g __read_mostly;
@@ -89,6 +102,19 @@ static void update_online_cpu_policy(void)
 	put_online_cpus();
 }
 
+static void update_stune_boost(struct boost_drv *b, bool *active, int value,
+			       int *slot)
+{
+	if (value && !*active)
+		*active = !do_stune_boost("top-app", value, slot);
+}
+
+static void clear_stune_boost(struct boost_drv *b, bool *active, int slot)
+{
+	if (*active)
+		*active = reset_stune_boost("top-app", slot);
+}
+
 static void unboost_all_cpus(struct boost_drv *b)
 {
 	if (!cancel_delayed_work_sync(&b->input_unboost) &&
@@ -97,6 +123,9 @@ static void unboost_all_cpus(struct boost_drv *b)
 
 	clear_boost_bit(b, INPUT_BOOST | WAKE_BOOST | MAX_BOOST);
 	update_online_cpu_policy();
+
+	clear_stune_boost(b, &b->input_stune_active, b->input_stune_slot);
+	clear_stune_boost(b, &b->max_stune_active, b->max_stune_slot);
 }
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
@@ -157,6 +186,9 @@ static void input_boost_worker(struct work_struct *work)
 	if (!cancel_delayed_work_sync(&b->input_unboost)) {
 		set_boost_bit(b, INPUT_BOOST);
 		update_online_cpu_policy();
+
+		update_stune_boost(b, &b->input_stune_active, input_stune_boost,
+				   &b->input_stune_slot);
 	}
 
 	queue_delayed_work(b->wq, &b->input_unboost,
@@ -170,6 +202,8 @@ static void input_unboost_worker(struct work_struct *work)
 
 	clear_boost_bit(b, INPUT_BOOST);
 	update_online_cpu_policy();
+
+	clear_stune_boost(b, &b->input_stune_active, b->input_stune_slot);
 }
 
 static void max_boost_worker(struct work_struct *work)
@@ -179,10 +213,13 @@ static void max_boost_worker(struct work_struct *work)
 	if (!cancel_delayed_work_sync(&b->max_unboost)) {
 		set_boost_bit(b, MAX_BOOST);
 		update_online_cpu_policy();
+
+		update_stune_boost(b, &b->max_stune_active, max_stune_boost,
+				   &b->max_stune_slot);
 	}
 
 	queue_delayed_work(b->wq, &b->max_unboost,
-		msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
+			   msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
 }
 
 static void max_unboost_worker(struct work_struct *work)
@@ -192,6 +229,8 @@ static void max_unboost_worker(struct work_struct *work)
 
 	clear_boost_bit(b, WAKE_BOOST | MAX_BOOST);
 	update_online_cpu_policy();
+
+	clear_stune_boost(b, &b->max_stune_active, b->max_stune_slot);
 }
 
 static int cpu_notifier_cb(struct notifier_block *nb,
