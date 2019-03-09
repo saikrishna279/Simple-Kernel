@@ -1139,6 +1139,10 @@ out:
 static void
 schedtune_boostgroup_release(struct schedtune *st)
 {
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	/* Free dynamic boost slots */
+	boost_slots_release(st);
+#endif // CONFIG_DYNAMIC_STUNE_BOOST
 	struct boost_groups *bg;
 	int cpu;
 
@@ -1148,11 +1152,6 @@ schedtune_boostgroup_release(struct schedtune *st)
 		bg->group[st->idx].valid = false;
 		bg->group[st->idx].boost = 0;
 	}
-
-#ifdef CONFIG_DYNAMIC_STUNE_BOOST
-	/* Free dynamic boost slots */
-	boost_slots_release(st);
-#endif // CONFIG_DYNAMIC_STUNE_BOOST
 
 	/* Keep track of allocated boost groups */
 	allocated_group[st->idx] = NULL;
