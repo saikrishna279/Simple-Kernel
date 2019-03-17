@@ -679,3 +679,6 @@ CONFIG_MEMCG_SWAP=y
 
 #klaspe
 CONFIG_KLAPSE=y
+
+#Frandom
+CONFIG_FRANDOM=y
