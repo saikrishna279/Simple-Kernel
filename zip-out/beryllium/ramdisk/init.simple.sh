@@ -15,6 +15,8 @@ echo 128 > /sys/block/sda/queue/read_ahead_kb
 echo 128 > /sys/block/sda/queue/nr_requests
 echo 128 > /sys/block/sdf/queue/read_ahead_kb
 echo 128 > /sys/block/sdf/queue/nr_requests
+echo 128 > /sys/block/sde/queue/read_ahead_kb
+echo 128 > /sys/block/sde/queue/nr_requests
 
 # Enable scheduler core_ctl
 echo 1 > /sys/devices/system/cpu/cpu0/core_ctl/enable
