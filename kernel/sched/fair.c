@@ -7652,8 +7652,12 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 			cpumask_test_cpu(cpu, tsk_cpus_allowed(p)));
 	}
 
-	if (energy_aware() && !(cpu_rq(prev_cpu)->rd->overutilized))
-		return select_energy_cpu_brute(p, prev_cpu);
+	if (energy_aware() && !(cpu_rq(prev_cpu)->rd->overutilized)) {
+		rcu_read_lock();
+		new_cpu = select_energy_cpu_brute(p, prev_cpu);
+		rcu_read_unlock();
+		return new_cpu;
+	}
 
 	rcu_read_lock();
 	for_each_domain(cpu, tmp) {
@@ -10168,6 +10172,7 @@ redo:
 		 * correctly treated as an imbalance.
 		 */
 		env.flags |= LBF_ALL_PINNED;
+		env.loop_max  = min(sysctl_sched_nr_migrate, busiest->nr_running);
 
 more_balance:
 		raw_spin_lock_irqsave(&busiest->lock, flags);
@@ -10178,12 +10183,6 @@ more_balance:
 			env.flags &= ~LBF_ALL_PINNED;
 			goto no_move;
 		}
-
-		/*
-		 * Set loop_max when rq's lock is taken to prevent a race.
-		 */
-		env.loop_max = min(sysctl_sched_nr_migrate,
-							busiest->nr_running);
 
 		/*
 		 * cur_ld_moved - load moved in current iteration
