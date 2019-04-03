@@ -7,21 +7,17 @@
 
 #include <linux/cpu.h>
 #include <linux/cpufreq.h>
-#include <linux/msm_drm_notify.h>
 #include <linux/input.h>
 #include <linux/moduleparam.h>
+#include <linux/msm_drm_notify.h>
 #include <linux/slab.h>
 
 static unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_LP;
 static unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_PERF;
-static unsigned int input_boost_return_freq_lp = CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
-static unsigned int input_boost_return_freq_hp = CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
 static unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
 
 module_param(input_boost_freq_lp, uint, 0644);
 module_param(input_boost_freq_hp, uint, 0644);
-module_param(input_boost_return_freq_lp, uint, 0644);
-module_param(input_boost_return_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
 
 /* Available bits for boost_drv state */
@@ -56,9 +52,9 @@ static u32 get_boost_freq(struct boost_drv *b, u32 cpu)
 static u32 get_min_freq(struct boost_drv *b, u32 cpu)
 {
 	if (cpumask_test_cpu(cpu, cpu_lp_mask))
-		return input_boost_return_freq_lp;
+		return CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
 
-	return input_boost_return_freq_hp;
+	return CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
 }
 
 static u32 get_boost_state(struct boost_drv *b)
@@ -104,8 +100,7 @@ static void __cpu_input_boost_kick(struct boost_drv *b)
 	if (!(get_boost_state(b) & SCREEN_AWAKE))
 		return;
 
-	if (likely(input_boost_duration))
-		queue_work(b->wq, &b->input_boost);
+	queue_work(b->wq, &b->input_boost);
 }
 
 void cpu_input_boost_kick(void)
@@ -154,14 +149,13 @@ static void input_boost_worker(struct work_struct *work)
 {
 	struct boost_drv *b = container_of(work, typeof(*b), input_boost);
 
-
 	if (!cancel_delayed_work_sync(&b->input_unboost)) {
 		set_boost_bit(b, INPUT_BOOST);
 		update_online_cpu_policy();
 	}
 
 	queue_delayed_work(b->wq, &b->input_unboost,
-		msecs_to_jiffies(input_boost_duration));
+			   msecs_to_jiffies(input_boost_duration));
 }
 
 static void input_unboost_worker(struct work_struct *work)
@@ -177,12 +171,10 @@ static void max_boost_worker(struct work_struct *work)
 {
 	struct boost_drv *b = container_of(work, typeof(*b), max_boost);
 
-
 	if (!cancel_delayed_work_sync(&b->max_unboost)) {
 		set_boost_bit(b, MAX_BOOST);
 		update_online_cpu_policy();
 	}
-
 
 	queue_delayed_work(b->wq, &b->max_unboost,
 		msecs_to_jiffies(atomic_read(&b->max_boost_dur)));
@@ -260,7 +252,6 @@ static void cpu_input_boost_input_event(struct input_handle *handle,
 	struct boost_drv *b = handle->handler->private;
 
 	__cpu_input_boost_kick(b);
-
 }
 
 static int cpu_input_boost_input_connect(struct input_handler *handler,
@@ -356,7 +347,7 @@ static int __init cpu_input_boost_init(void)
 	INIT_DELAYED_WORK(&b->input_unboost, input_unboost_worker);
 	INIT_WORK(&b->max_boost, max_boost_worker);
 	INIT_DELAYED_WORK(&b->max_unboost, max_unboost_worker);
-	atomic_set(&b->state, SCREEN_AWAKE);
+	atomic_set(&b->state, 0);
 
 	b->cpu_notif.notifier_call = cpu_notifier_cb;
 	ret = cpufreq_register_notifier(&b->cpu_notif, CPUFREQ_POLICY_NOTIFIER);
@@ -380,7 +371,6 @@ static int __init cpu_input_boost_init(void)
 		goto unregister_handler;
 	}
 
-	/* Allow global boost config access for external boosts */
 	boost_drv_g = b;
 
 	return 0;
