@@ -9,7 +9,9 @@ do.devicecheck=1
 do.modules=0
 do.cleanup=1
 do.cleanuponabort=0
-device.name1=dipper
+device.name1=beryllium
+device.name2=dipper
+device.name3=polaris
 supported.versions=9,9.0
 '} # end properties
 
