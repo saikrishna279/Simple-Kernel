@@ -17,10 +17,14 @@
 static unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_LP;
 static unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_PERF;
 static unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
+static unsigned int boost_min_freq_lp __read_mostly = CONFIG_BASE_BOOST_FREQ_LP;
+static unsigned int boost_min_freq_hp __read_mostly = CONFIG_BASE_BOOST_FREQ_PERF;
 
 module_param(input_boost_freq_lp, uint, 0644);
 module_param(input_boost_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
+module_param_named(remove_input_boost_freq_lp, boost_min_freq_lp, uint, 0644);
+module_param_named(remove_input_boost_freq_perf, boost_min_freq_hp, uint, 0644);
 
 /* The sched_param struct is located elsewhere in newer kernels */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
@@ -71,12 +75,16 @@ static u32 get_max_boost_freq(struct cpufreq_policy *policy)
 	return min(freq, policy->max);
 }
 
-static u32 get_min_freq(struct boost_drv *b, u32 cpu)
+static u32 get_min_freq(struct cpufreq_policy *policy)
 {
-	if (cpumask_test_cpu(cpu, cpu_lp_mask))
-		return CONFIG_REMOVE_INPUT_BOOST_FREQ_LP;
+	u32 freq;
 
-	return CONFIG_REMOVE_INPUT_BOOST_FREQ_PERF;
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask))
+		freq = boost_min_freq_lp;
+	else
+		freq = boost_min_freq_hp;
+
+	return max(freq, policy->cpuinfo.min_freq);
 }
 
 static u32 get_boost_state(struct boost_drv *b)
@@ -218,7 +226,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 
 	/* Unboost when the screen is off */
 	if (state & SCREEN_OFF) {
-		policy->min = policy->cpuinfo.min_freq;
+		policy->min = get_min_freq(policy);
 		return NOTIFY_OK;
 	}
 
@@ -235,8 +243,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	if (state & INPUT_BOOST)
 		policy->min = get_input_boost_freq(policy);
 	else
-		min_freq = get_min_freq(b, policy->cpu);
-		policy->min = max(policy->cpuinfo.min_freq, min_freq);
+		policy->min = get_min_freq(policy);
 
 	return NOTIFY_OK;
 }
