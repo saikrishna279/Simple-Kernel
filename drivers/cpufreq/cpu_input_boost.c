@@ -28,6 +28,11 @@ module_param_named(remove_input_boost_freq_lp, boost_min_freq_lp, uint, 0644);
 module_param_named(remove_input_boost_freq_perf, boost_min_freq_hp, uint, 0644);
 module_param(frame_boost_timeout, int, 0644);
 
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static __read_mostly int stune_boost = CONFIG_TA_STUNE_BOOST;
+module_param_named(dynamic_stune_boost, stune_boost, int, 0644);
+#endif
+
 /* The sched_param struct is located elsewhere in newer kernels */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 #include <uapi/linux/sched/types.h>
@@ -50,6 +55,9 @@ struct boost_drv {
 	atomic64_t max_boost_expires;
 	atomic_t state;
 	unsigned long last_input_jiffies;
+
+	bool stune_active;
+	int stune_slot;
 };
 
 static struct boost_drv *boost_drv_g __read_mostly;
@@ -138,6 +146,23 @@ bool cpu_input_boost_should_boost_frame(void)
 		return false;
 
 	return cpu_input_boost_within_input(frame_boost_timeout);
+}
+
+static void update_stune_boost(struct boost_drv *b, int value)
+{
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	if (value && !b->stune_active)
+		b->stune_active = !do_stune_boost("top-app", value,
+						  &b->stune_slot);
+#endif
+}
+
+static void clear_stune_boost(struct boost_drv *b)
+{
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	if (b->stune_active)
+		b->stune_active = reset_stune_boost("top-app", b->stune_slot);
+#endif
 }
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
@@ -258,6 +283,7 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	/* Boost CPU to max frequency for max boost */
 	if (state & MAX_BOOST) {
 		policy->min = get_max_boost_freq(policy);
+		update_stune_boost(b, stune_boost);
 		return NOTIFY_OK;
 	}
 
@@ -265,10 +291,13 @@ static int cpu_notifier_cb(struct notifier_block *nb,
 	 * Boost to policy->max if the boost frequency is higher. When
 	 * unboosting, set policy->min to the absolute min freq for the CPU.
 	 */
-	if (state & INPUT_BOOST)
+	if (state & INPUT_BOOST) {
 		policy->min = get_input_boost_freq(policy);
-	else
+		update_stune_boost(b, stune_boost);
+	} else {
 		policy->min = get_min_freq(policy);
+		clear_stune_boost(b);
+	}
 
 	return NOTIFY_OK;
 }
