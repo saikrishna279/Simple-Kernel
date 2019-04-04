@@ -290,6 +290,13 @@ config WAKE_BOOST_DURATION_MS
 	help
 	  Wake boost duration in milliseconds.
 
+config FRAME_BOOST_TIMEOUT
+	int "Post-input frame boost timeout"
+	default "3250"
+	help
+	  The timeout in milliseconds during which frame boosting is allowed,
+	  counting from when the last input event was received.
+
 config BASE_BOOST_FREQ_LP
 	int "Low-power cluster base frequency"
 	default "0"

@@ -19,12 +19,14 @@ static unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_PERF;
 static unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
 static unsigned int boost_min_freq_lp __read_mostly = CONFIG_BASE_BOOST_FREQ_LP;
 static unsigned int boost_min_freq_hp __read_mostly = CONFIG_BASE_BOOST_FREQ_PERF;
+static int frame_boost_timeout __read_mostly = CONFIG_FRAME_BOOST_TIMEOUT;
 
 module_param(input_boost_freq_lp, uint, 0644);
 module_param(input_boost_freq_hp, uint, 0644);
 module_param(input_boost_duration, short, 0644);
 module_param_named(remove_input_boost_freq_lp, boost_min_freq_lp, uint, 0644);
 module_param_named(remove_input_boost_freq_perf, boost_min_freq_hp, uint, 0644);
+module_param(frame_boost_timeout, int, 0644);
 
 /* The sched_param struct is located elsewhere in newer kernels */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
@@ -125,6 +127,17 @@ bool cpu_input_boost_within_input(unsigned long timeout_ms)
 
 	return time_before(jiffies, b->last_input_jiffies +
 			   msecs_to_jiffies(timeout_ms));
+}
+
+bool cpu_input_boost_should_boost_frame(void)
+{
+	if (frame_boost_timeout < 0)
+		return true;
+
+	if (frame_boost_timeout == 0)
+		return false;
+
+	return cpu_input_boost_within_input(frame_boost_timeout);
 }
 
 static void __cpu_input_boost_kick(struct boost_drv *b)
