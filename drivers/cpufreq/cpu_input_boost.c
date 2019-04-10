@@ -20,6 +20,7 @@ static unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
 static unsigned int boost_min_freq_lp __read_mostly = CONFIG_BASE_BOOST_FREQ_LP;
 static unsigned int boost_min_freq_hp __read_mostly = CONFIG_BASE_BOOST_FREQ_PERF;
 static int frame_boost_timeout __read_mostly = CONFIG_FRAME_BOOST_TIMEOUT;
+static int wake_boost_duration __read_mostly = CONFIG_WAKE_BOOST_DURATION_MS;
 
 module_param(input_boost_freq_lp, uint, 0644);
 module_param(input_boost_freq_hp, uint, 0644);
