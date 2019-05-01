@@ -9,14 +9,33 @@ sleep 10
 # to one of the CPU from the default IRQ affinity mask.
 echo f > /proc/irq/default_smp_affinity
 
-# Tweak IO performance after boot complete
-echo "cfq" > /sys/block/sda/queue/scheduler
-echo 128 > /sys/block/sda/queue/read_ahead_kb
-echo 128 > /sys/block/sda/queue/nr_requests
-echo 128 > /sys/block/sdf/queue/read_ahead_kb
-echo 128 > /sys/block/sdf/queue/nr_requests
-echo 128 > /sys/block/sde/queue/read_ahead_kb
-echo 128 > /sys/block/sde/queue/nr_requests
+# IO block tweaks for better system performance;
+for i in /sys/block/*/queue; do
+  echo 0 > $i/add_random;
+  echo 0 > $i/iostats;
+  echo 0 > $i/nomerges;
+  echo 32 > $i/nr_requests;
+  echo 128 > $i/read_ahead_kb;
+  echo 0 > $i/rotational;
+  echo 1 > $i/rq_affinity;
+  echo "cfq" > $i/scheduler;
+done;
+
+#Tweak cfq IO scheduler for less latency
+for i in /sys/block/*/queue/iosched; do
+  echo 4 > $i/quantum;
+  echo 80 > $i/fifo_expire_sync;
+  echo 330 > $i/fifo_expire_async;
+  echo 12582912 > $i/back_seek_max;
+  echo 1 > $i/back_seek_penalty;
+  echo 60 > $i/slice_sync;
+  echo 50 > $i/slice_async;
+  echo 2 > $i/slice_async_rq;
+  echo 0 > $i/slice_idle;
+  echo 0 > $i/group_idle;
+  echo 1 > $i/low_latency;
+  echo 300 > $i/target_latency;
+done;
 
 # Enable scheduler core_ctl
 echo 1 > /sys/devices/system/cpu/cpu0/core_ctl/enable
