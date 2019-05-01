@@ -37,6 +37,31 @@ for i in /sys/block/*/queue/iosched; do
   echo 300 > $i/target_latency;
 done;
 
+# Disable CAF task placement for Big Cores
+echo /proc/sys/kernel/sched_walt_rotate_big_tasks 0
+
+# Disable Boost_No_Override
+echo > 0 /dev/stune/foreground/schedtune.sched_boost_no_override
+echo > 0 /dev/stune/top-app/schedtune.sched_boost_no_override
+
+# Set default schedTune value for foreground/top-app
+echo 1 > /dev/stune/foreground/schedtune.prefer_idle 
+echo 1 > /dev/stune/top-app/schedtune.prefer_idle
+
+# Setup EAS cpusets values for better load balancing
+echo "0-7" > /dev/cpuset/top-app/cpus 
+
+# Since we are not using core rotator, lets load balance
+echo "0-3,6-7" > /dev/cpuset/foreground/cpus
+echo "0-1" > /dev/cpuset/background/cpus
+echo "0-3" > /dev/cpuset/system-background/cpus 
+
+# Manually force all of the kernel tasks to be applied upon the low power cores / cluster for power saving reasons;
+echo "0-3" > /dev/cpuset/kernel/cpus
+
+# For better screen off idle
+echo "0-3" > /dev/cpuset/restricted/cpus 
+
 # Enable scheduler core_ctl
 echo 1 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 echo 1 > /sys/devices/system/cpu/cpu4/core_ctl/enable
@@ -63,6 +88,22 @@ echo "s2idle" > /sys/power/mem_sleep
 
 # Toggle Sched Features
 echo "NO_FBT_STRICT_ORDER" > /sys/kernel/debug/sched_features
+
+# Reduce swappiness: 100 -> 85 (since December update)
+# This reduces kswapd0 CPU usage, leading to
+# better performance and battery due to less CPU time used
+echo 65 > /proc/sys/vm/swappiness
+
+# Disable a few minor and overall pretty useless modules for slightly better battery life & system wide performance;
+echo "Y" > /sys/module/bluetooth/parameters/disable_ertm
+echo "Y" > /sys/module/bluetooth/parameters/disable_esco
+
+# Use the deepest CPU idle state for a few additional power savings if your kernel of choice now supports it;
+echo "1" > /sys/devices/system/cpu/cpuidle/use_deepest_state
+
+# Enable display / screen panel power saving features;
+echo "Y" > /sys/kernel/debug/dsi_ss_ea8074_notch_fhd_cmd_display/dsi-phy-0_allow_phy_power_off
+echo "Y" > /sys/kernel/debug/dsi_ss_ea8074_notch_fhd_cmd_display/ulps_enable
 
 #Configure Thermal Profile
 echo 10 > /sys/class/thermal/thermal_message/sconfig
