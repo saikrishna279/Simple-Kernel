@@ -73,8 +73,12 @@ mount -o rw /dev/block/bootdevice/by-name/vendor /vendor
 exec_util "cp -a /tmp/anykernel/ramdisk/init.simple.sh /vendor/bin/"
 set_con qti_init_shell_exec /vendor/bin/init.simple.sh
 umount /vendor || true
-
 # end ramdisk changes
+
+# Set magisk policy
+ui_print "Setting up magisk policy for SELinux...";
+$bin/magiskpolicy --load sepolicy --save sepolicy "allow init rootfs file execute_no_trans";
+$bin/magiskpolicy --load sepolicy_debug --save sepolicy_debug "allow init rootfs file execute_no_trans";
 
 ui_print "Regenerating image kernel and installing..."
 write_boot;
