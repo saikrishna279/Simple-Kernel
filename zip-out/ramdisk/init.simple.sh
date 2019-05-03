@@ -38,7 +38,7 @@ for i in /sys/block/*/queue/iosched; do
 done;
 
 # Disable CAF task placement for Big Cores
-echo /proc/sys/kernel/sched_walt_rotate_big_tasks 0
+echo 0 > /proc/sys/kernel/sched_walt_rotate_big_tasks
 
 # Disable Boost_No_Override
 echo > 0 /dev/stune/foreground/schedtune.sched_boost_no_override
