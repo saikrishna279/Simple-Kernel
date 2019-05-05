@@ -83,6 +83,12 @@ echo 1 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
 echo 500 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
 echo 20000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us 
 
+# Disable in-kernel sched statistics for reduced overhead;
+echo "0" > /proc/sys/kernel/sched_schedstats
+
+# Disable Gentle Fair Sleepers for a smoother UI;
+echo "NO_GENTLE_FAIR_SLEEPERS" > /sys/kernel/debug/sched_features
+
 #Enable suspend to idle mode to reduce latency during suspend/resume
 echo "s2idle" > /sys/power/mem_sleep
 
