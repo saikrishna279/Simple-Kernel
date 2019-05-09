@@ -40,13 +40,14 @@ done;
 # Disable CAF task placement for Big Cores
 echo 0 > /proc/sys/kernel/sched_walt_rotate_big_tasks
 
-# Disable Boost_No_Override
-echo > 0 /dev/stune/foreground/schedtune.sched_boost_no_override
-echo > 0 /dev/stune/top-app/schedtune.sched_boost_no_override
+# Enable Boost_No_Override
+echo 1 > /dev/stune/foreground/schedtune.sched_boost_no_override
+echo 1 > /dev/stune/top-app/schedtune.sched_boost_no_override
 
 # Set default schedTune value for foreground/top-app
 echo 1 > /dev/stune/foreground/schedtune.prefer_idle 
 echo 1 > /dev/stune/top-app/schedtune.prefer_idle
+echo 5 > /dev/stune/top-app/schedtune.sched_boost
 
 # Setup EAS cpusets values for better load balancing
 echo "0-7" > /dev/cpuset/top-app/cpus 
