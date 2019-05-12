@@ -96,9 +96,10 @@ echo -e "${green}Generating flashable ZIP...${white}"
 mkdir -p ${KERNEL_DIR}/build
 cd ${KERNEL_DIR}/build/
 rm Image.gz-dtb
+rm *.zip
 cp ${KERNEL_DIR}/out/arch/arm64/boot/Image.gz-dtb ${KERNEL_DIR}/build/
 cd ${KERNEL_DIR}/build/
-zip -r ${zip_name} ${KERNEL_DIR}/build/*
+zip -r ${zip_name} *
 echo -e "${blue}Done!${white}"
 cd ${KERNEL_DIR}
 }
