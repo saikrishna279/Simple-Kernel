@@ -77,7 +77,7 @@ if [ -a ${zimage} ]; then
 read xxx
 if [[ $xxx == "Y" || $xxx == "y" ]]
 then
-	zip
+	mkzip
 elif [[ $xxx == "N" || $xxx == "n" ]]
 then
 	echo "Okay then! Cya..."
