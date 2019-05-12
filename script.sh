@@ -61,16 +61,13 @@ echo -e "${green}Done!${white}"
 
 function build(){
 echo -e "${green}Starting build now!${white}"
-#make O="${OUT}" "${KERNEL}_defconfig"
-#make O="${OUT}" -j$(nproc --all) &>buildlog.txt & pid=$!
-
 make O="${OUT}" ARCH="${ARCH}" "${KERNEL}_defconfig"
 make -j$(nproc --all) O="${OUT}" \
                       ARCH="${ARCH}" \
                       CC="${CC}" \
                       CLANG_TRIPLE="${CLANG_TRIPLE}" \
 		      CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32}" \
-                      CROSS_COMPILE="${CROSS_COMPILE}" &>buildlog.txt & pid=$!
+                      CROSS_COMPILE="${CROSS_COMPILE}"
 }
 
 function log(){
