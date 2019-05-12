@@ -51,15 +51,19 @@ echo -e "kerneldir = ${red}${KERNEL_DIR}${white}"
 echo -e "ccache dir = ${red}${CCACHE_DIR}${white}"
 echo -e "Building as ${yellow}${KBUILD_BUILD_USER}${white}@${blue}${KBUILD_BUILD_HOST}${white}"
 
-
 function clean(){
 echo -e "${red}Cleaning...${white}"
 make clean && make mrproper
-rm ${KERNEL_DIR}/out/arch/arm64/boot/Image
+rm -f ${KERNEL_DIR}/out/arch/arm64/boot/Image
 echo -e "${green}Done!${white}"
 }
 
 function build(){
+echo -n -e "${red}Clean before compiling?${white} Y/N?"
+read ass
+if [[ $ass == "Y" || $ass == "y" ]]; then
+clean
+fi
 echo -e "${green}Starting build now!${white}"
 make O="${OUT}" ARCH="${ARCH}" "${KERNEL}_defconfig"
 make -j$(nproc --all) O="${OUT}" \
@@ -68,10 +72,33 @@ make -j$(nproc --all) O="${OUT}" \
                       CLANG_TRIPLE="${CLANG_TRIPLE}" \
 		      CROSS_COMPILE_ARM32="${CROSS_COMPILE_ARM32}" \
                       CROSS_COMPILE="${CROSS_COMPILE}"
+if [ -a ${zimage} ]; then
+	echo -e "${green}Build successfully completed!${white} Start compression? (Y/N)"
+read xxx
+if [[ $xxx == "Y" || $xxx == "y" ]]
+then
+	zip
+elif [[ $xxx == "N" || $xxx == "n" ]]
+then
+	echo "Okay then! Cya..."
+fi
+fi
 }
 
 function log(){
 echo -e "${bold}${red}BEGIN LOG${white}${normal}"
 cat ${KERNEL_DIR}/buildlog.txt
 echo -e "${bold}${red}END LOG${white}${normal}"
+}
+
+function mkzip(){
+echo -e "${green}Generating flashable ZIP...${white}"
+mkdir -p ${KERNEL_DIR}/build
+cd ${KERNEL_DIR}/build/
+rm Image.gz-dtb
+cp ${KERNEL_DIR}/out/arch/arm64/boot/Image.gz-dtb ${KERNEL_DIR}/build/
+cd ${KERNEL_DIR}/build/
+zip -r ${zip_name} ${KERNEL_DIR}/build/*
+echo -e "${blue}Done!${white}"
+cd ${KERNEL_DIR}
 }
